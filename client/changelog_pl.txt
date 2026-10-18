@@ -1,30 +1,30 @@
-V2.1.0.0
+V2.0.2.0
 
-W tej wersji pojawiają się transkrypcje i opisy wiadomości głosowych, obrazów, filmów, naklejek i plików PDF tworzone przez AI.
-
-NOWOŚCI
-
-- Transkrybuj i opisuj pliki za pomocą AI. Nowa karta „Transkrypcje i opisy” w Ustawieniach włącza funkcje AI (domyślnie są wyłączone) i przyjmuje klucz API jednego lub kilku dostawców — Gemini, OpenAI, Claude, Groq i OpenRouter — którzy są wypróbowywani w ustawionej przez Ciebie kolejności; gdy jeden zawiedzie lub wyczerpie limit, odpowiada następny. W menu kontekstowym wiadomości lub skrótem Ctrl+Shift+I „Transkrybuj” zamienia wiadomość głosową na tekst, „Opisz” opisuje zdjęcie lub film, „Opisz naklejkę” opisuje naklejkę, a „Konwertuj na dostępny tekst” zamienia plik PDF w zwykły, czytelny tekst. Wynik otwiera się w oknie z tekstem, a dla zdjęć i filmów możesz w nim zadawać dodatkowe pytania. WinZapp pyta przed wysłaniem pliku do dostawcy, a w zablokowanych czatach pyta za każdym razem; klucze są szyfrowane na Twoim komputerze i wysyłane tylko do dostawcy, do którego należą. Podczas pracy dostawcy odtwarzany jest dźwięk oczekiwania, a odpowiedzi mogą być czytane na głos automatycznie. Tekst jest w języku aplikacji.
-
-- Gdy ktoś zareaguje na Twoją wiadomość, odtwarzany jest osobny dźwięk. Zmień plik lub wyłącz dźwięk w Ustawieniach > Zdarzenia dźwiękowe.
-
-- Własne listy WhatsApp: odświeżanie i filtrowanie według list, tworzenie lub zmiana nazwy listy oraz dodawanie i usuwanie wybranych czatów. Edycja zależy od obsługi konta WhatsApp. Czaty zamknięte w sejfie lub niedostępne lokalnie nie pojawiają się w wyborze; pozostali członkowie są zachowywani. Niepotwierdzone zmiany są zgłaszane bez automatycznego ponawiania.
-
-- Kontakty synchronizowane z telefonem: przy dodawaniu kontaktu (w "Informacje o czacie", w "Nowy czat" lub z wiadomości z kontaktem) są teraz dwie karty, "Kontakt lokalny WinZappa" (tylko w WinZappie) i "Kontakt zsynchronizowany z telefonem", która zapisuje nazwę w WhatsAppie i w książce adresowej telefonu. Karta synchronizowana otwiera się domyślnie, numer, który już jest w książce adresowej telefonu, pokazuje tylko tę kartę, a usunięcie kontaktu zsynchronizowanego usuwa go też z WhatsAppa i z telefonu
-
-- Nowy skrót Alt+Shift+P na liście wiadomości: przejście do poprzedniej wiadomości z odpowiedzią do Ciebie, tak jak Alt+Shift+M robi to dla wzmianek. Kolejne naciśnięcia cofają się po nich i wracają do najnowszej. Skrót jest też w "Skróty klawiszowe" (F1)
+To kolejna wersja konserwacyjna wydania stabilnego. Zmienia tylko sposób, w jaki WinZapp współpracuje z serwerem WPPConnect, czyli programem łączącym WinZapp z WhatsApp: obsługuje najnowszą wersję serwera i instaluje teraz wyłącznie wersje, o których wie, że działają.
 
 POPRAWKI
 
-- Wzmianki: osoba wspomniana z imienia obok @wszyscy zachowuje swój link we wzmiankach wiadomości, a wzmianka o Tobie, w powiadomieniu i w podglądzie na liście czatów, używa słowa wybranego w "Jak mam się do Ciebie zwracać?" zamiast stałego słowa
+Obsługiwany jest serwer WPPConnect 2.10.58. Serwer odmawia teraz uruchomienia sesji, gdy trwa kopia zapasowa lub przywracanie sesji, zapisuje plik tokenu każdej sesji w całości, aby awaria nie zostawiła go w połowie zapisanego, i przez minutę ponownie wykorzystuje już sprawdzony token dostępu zamiast sprawdzać go przy każdym żądaniu. Jeśli WinZapp zaproponuje aktualizację WPPConnect przy uruchomieniu, zaakceptuj ją, aby zainstalować nową wersję.
 
-- Ustawienia, karta "Interfejs użytkownika": karta jest teraz przewijana, a grupy opcji na jej końcu znów są odczytywane we właściwym miejscu. Na mniejszych ekranach czytnik ekranu ogłaszał "Pozycja ogłaszania zaznaczonych elementów" przy następnym polu wyboru, a nie przy przyciskach opcji tej grupy
+WinZapp nie proponuje już samoczynnie aktualizacji serwera WPPConnect. Wcześniej szukał najnowszej wersji oryginalnego projektu i ją oferował, ale jego poprawki są przenoszone do każdej wersji ręcznie, więc aktualizacja mogła trafić na wersję, której jeszcze nie obsługuje. Teraz WinZapp instaluje i proponuje tylko wersję, z którą go testowano. Nowa instalacja oraz Pomoc > Wymuś ponowną instalację WPPConnect również używają tej wersji.
 
-- Treści AI: resetowanie wszystkich kluczy usuwa też zapamiętane zgody na wysyłanie, nawet po wpisaniu nowego klucza przed zastosowaniem zmian. Długie transkrypcje i teksty PDF zgłaszają teraz błąd limitu tekstu zamiast tracić końcówkę bez ostrzeżenia; ten limit nie powoduje automatycznej próby u innego dostawcy.
+Bezpieczne aktualizacje serwera WPPConnect docierają teraz bez czekania na nową wersję WinZappa. Gdy zespół WinZapp sprawdzi, że nowsza wersja serwera działa z Twoim WinZappem, zwykle aktualizacja, która przynosi jedynie poprawki bezpieczeństwa w bibliotekach używanych przez serwer, WinZapp proponuje ją jako zalecaną i możesz ją odrzucić. Pomoc > Wymuś ponowną instalację WPPConnect również używa najnowszej z tych wersji.
 
-- Przycisk „Opisz” przy wiadomościach z multimediami. Przy zdjęciu, naklejce lub wideo (a także przy nagraniach audio i plikach PDF, gdy funkcje AI są włączone) zaraz po „Zapisz jako” pojawia się przycisk dostępny klawiszem Tab, który robi to samo co skrót Ctrl+Shift+I; w menu kontekstowym pozycja znajduje się teraz wśród pozostałych akcji multimediów i także pokazuje Ctrl+Shift+I. Przycisk i pozycja pojawiają się tylko przy wiadomościach, które można opisać.
+Aktualizacja WinZappa nie cofa już serwera WPPConnect do wersji starszej niż ta, którą już zainstalowano, na przykład zalecanej, więc ta sama aktualizacja serwera nie jest proponowana ponownie.
 
-- Model „Automatycznie (zalecane)” w oknie każdego dostawcy AI (Transkrypcje i opisy). Domyślnie zaznaczone u dostawców, u których nie wybrano jeszcze modelu, pole sprawia, że WinZapp zawsze używa zalecanego modelu, który podąża za aktualizacjami; odznacz je, aby wybrać lub wpisać stały model.
+V2.0.1.0
+
+To wersja konserwacyjna wydania stabilnego. Aktualizuje tylko biblioteki WPPConnect, których WinZapp używa do komunikacji z WhatsApp, po zmianie w WhatsApp Web, która zepsuła wysyłanie wiadomości głosowych i dokumentów.
+
+POPRAWKI
+
+Wysyłanie wiadomości głosowych i dokumentów znowu działa. WhatsApp Web zmienił się tak, że te wysyłki kończyły się błędem; WinZapp używa teraz zaktualizowanych bibliotek WPPConnect (WPPConnect 2.3.5 i WA-JS 4.7.1), które sobie z tym radzą.
+
+Obsługiwany jest serwer WPPConnect 2.10.55. Instalacja lub aktualizacja do najnowszego serwera nie kończy się już błędem "npm run build failed", a serwer jest uruchamiany z aktualnymi ustawieniami.
+
+Anulowanie parowania przy łączeniu konta nie zostawia już działającej starej pętli kodu QR, a strona WhatsApp Web, która nigdy nie kończy ładowania, jest porzucana po 60 sekundach zamiast zostawiać WinZapp w oczekiwaniu.
+
+Jeśli używałeś wcześniejszej wersji, a wiadomości głosowe nadal nie działają po aktualizacji, WinZapp przy uruchomieniu proponuje ponowną instalację WPPConnect; zaakceptuj to raz, a nowe biblioteki zostaną zainstalowane.
 
 V2.0.0.0
 
@@ -120,6 +120,8 @@ ULEPSZENIA
 
 POPRAWKI
 
+- Aktualizacje WPPConnect pobierane w tle nie kończą się już błędem instalacji, gdy na dysku został stary folder serwera po poprzedniej aktualizacji. WinZapp usuwa go teraz (albo odkłada na bok, gdy Windows na to nie pozwala) i aktualizacja przebiega dalej.
+
 - Połączenia nie kończą się już błędem "NumPy was built with baseline optimizations", a potem "cannot load module more than once per process", na komputerach ze starszym procesorem lub ograniczonym przez maszynę wirtualną. WinZapp zawiera teraz wersję NumPy działającą na każdym 64-bitowym procesorze.
 
 - Połączenia: naprawiono błąd "cannot load module more than once per process", który mógł się pojawić przy rozpoczynaniu połączenia głosowego lub wideo. Silnik połączeń WhatsApp jest teraz uruchamiany tylko raz i współdzielony, zamiast być uruchamiany ponownie przy każdej akcji połączenia.
@@ -207,6 +209,8 @@ POPRAWKI
 - Powiadomienia o aktualizacjach pojawiają się teraz także wtedy, gdy WinZapp uruchamia się razem z Windows: w takim przypadku nie była oferowana ani aktualizacja samego WinZapp, ani WPPConnect Server. Powiadomienie o WPPConnect Server oferuje też teraz nowszą wersję niż ta testowana z WinZapp, jako zalecaną aktualizację, którą można odrzucić, a nie tylko wtedy, gdy sam WinZapp podnosił wymaganą wersję.
 
 - W czacie, którego starsze wiadomości są tylko na telefonie, WinZapp po dojściu do pierwszej wiadomości wciąż prosił o nie telefon: nic nie przychodziło, telefon mógł za każdym razem pokazać powiadomienie o synchronizacji, a lista przez kilka minut była zajęta. Teraz WinZapp wykrywa ten przypadek, o nic nie prosi i ogłasza „Starsze wiadomości zobaczysz w aplikacji WhatsApp na telefonie.”
+
+- Ustawienia, karta "Interfejs użytkownika": karta jest teraz przewijana, a grupy opcji na jej końcu znów są odczytywane we właściwym miejscu. Na mniejszych ekranach czytnik ekranu ogłaszał "Pozycja ogłaszania zaznaczonych elementów" przy następnym polu wyboru, a nie przy przyciskach opcji tej grupy
 
 V1.1.1.0
 

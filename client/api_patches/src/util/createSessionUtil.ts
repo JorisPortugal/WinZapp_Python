@@ -33,6 +33,7 @@ import {
   probeIsConnected,
   startHelper,
 } from './functions';
+import { tryBeginSessionStart } from './sessionMaintenance';
 import { clientsArray, eventEmitter } from './sessionUtil';
 import Factory from './tokenStore/factory';
 
@@ -863,6 +864,11 @@ export default class CreateSessionUtil {
     // its own. `client` itself is declared inside the try and is out of scope
     // there, which is why the old catch had to re-resolve it through
     // getClient() — and why it could not tell a superseded attempt apart.
+    // Upstream 2.10.52: a name is a folder under customUserDataDir.
+    if (!/^[A-Za-z0-9_-]+$/.test(session)) {
+      req.logger.error(new Error('Invalid session name'));
+      return;
+    }
     let ownClient: any = null;
     try {
       let client = this.getClient(session) as any;
@@ -897,7 +903,7 @@ export default class CreateSessionUtil {
       // start looks like a logout, even though the phone still lists the linked
       // device. Reading nothing is not a reason to destroy what is on disk.
       if (tokenData) {
-        myTokenStore.setToken(session, tokenData);
+        await myTokenStore.setToken(session, tokenData);
       } else {
         req.logger?.warn?.(
           `[${session}] Token store returned no data — leaving the stored token untouched.`
@@ -1303,7 +1309,26 @@ export default class CreateSessionUtil {
   }
 
   async opendata(req: Request, session: string, res?: any) {
-    await this.createSessionUtil(req, clientsArray, session, res);
+    // Upstream 2.10.56: no new start while a session backup or restore owns
+    // the profile directories. Kept here, outside createSessionUtil(), so the
+    // ownership logic in that method stays as it was.
+    const releaseStart = tryBeginSessionStart();
+    if (!releaseStart) {
+      req.logger.info('Session start skipped: backup or restore in progress');
+      const response = res as any;
+      if (response && !response.headersSent && !response._headerSent) {
+        response.status(503).json({
+          status: false,
+          message: 'Session backup or restore is in progress. Try again later.',
+        });
+      }
+      return;
+    }
+    try {
+      await this.createSessionUtil(req, clientsArray, session, res);
+    } finally {
+      releaseStart();
+    }
   }
 
   exportPhoneCode(

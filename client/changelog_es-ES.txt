@@ -1,30 +1,30 @@
-V2.1.0.0
+V2.0.2.0
 
-Esta versión trae la transcripción y descripción con IA de mensajes de voz, imágenes, vídeos, stickers y PDF.
-
-NOVEDADES
-
-- Transcribe y describe contenido con IA. La nueva pestaña "Transcripciones y Descripciones" de los Ajustes activa las funciones de IA (empiezan desactivadas) y recibe la clave de API de uno o más proveedores — Gemini, OpenAI, Claude, Groq y OpenRouter —, que se prueban en el orden que definas; así, cuando uno falla o se queda sin cuota, responde el siguiente. En el menú contextual de un mensaje, o con Ctrl+Shift+I, "Transcribir" convierte un mensaje de voz en texto, "Describir" describe una foto o un vídeo, "Describir sticker" describe un sticker y "Convertir en texto accesible" convierte un PDF en texto simple y legible. El resultado se abre en una ventana con el texto y, en fotos y vídeos, puedes hacer preguntas de seguimiento en ella. WinZapp pregunta antes de enviar contenido a un proveedor y vuelve a preguntar cada vez en los chats bloqueados; tus claves se cifran en tu ordenador y solo se envían al proveedor al que pertenecen. Suena un sonido de espera mientras el proveedor trabaja, y las respuestas pueden leerse en voz alta automáticamente. El texto sigue el idioma de la aplicación.
-
-- Suena un sonido diferente cuando alguien reacciona a tu mensaje. Cambia el archivo o desactiva el sonido en Configuración > Eventos de Sonido.
-
-- Listas personalizadas de WhatsApp: actualizar y filtrar por tus listas, crear o cambiar el nombre de una lista y añadir o quitar chats seleccionados. La edición depende de la compatibilidad de la cuenta WhatsApp. Los chats bloqueados por la bóveda o no disponibles localmente no aparecen en la selección; se conservan los demás miembros. Los cambios no confirmados se notifican sin repetición automática.
-
-- Contactos sincronizados con el teléfono: al agregar un contacto (en "Datos de la conversación", en "Nueva conversación" o desde un mensaje de contacto) ahora hay dos pestañas, "Contacto local de WinZapp" (solo en WinZapp) y "Contacto sincronizado con el teléfono", que guarda el nombre en WhatsApp y en la agenda del teléfono. La pestaña sincronizada se abre por defecto, un número que ya está en la agenda del teléfono muestra solo esa pestaña, y eliminar un contacto sincronizado también lo quita de WhatsApp y del teléfono
-
-- Nuevo atajo Alt+Shift+P en la lista de mensajes: ir al mensaje anterior que te responde, como Alt+Shift+M hace con las menciones. Al repetirlo se recorren hacia atrás y se vuelve a la más reciente. También aparece en "Atajos de teclado" (F1)
+Esta es otra versión de mantenimiento de la estable. Solo cambia la forma en que WinZapp trabaja con el servidor WPPConnect, el programa que conecta WinZapp con WhatsApp: admite la última versión del servidor y ahora instala solo versiones que sabe que funcionan.
 
 CORRECCIONES
 
-- Menciones: una persona mencionada por su nombre junto a @todos conserva su enlace en las menciones del mensaje, y una mención tuya, en la notificación y en la vista previa de la lista de conversaciones, usa la palabra elegida en "¿Cómo debo referirme a mí?" en lugar de una palabra fija
+Se admite el servidor WPPConnect 2.10.58. El servidor ahora se niega a iniciar una sesión mientras se hace una copia de seguridad o una restauración de las sesiones, guarda el archivo de token de cada sesión de una sola vez para que un fallo no lo deje a medias, y reutiliza durante un minuto un token de acceso ya comprobado en lugar de comprobarlo de nuevo en cada petición. Si WinZapp ofrece la actualización de WPPConnect al iniciar, acéptala para instalar la nueva versión.
 
-- Configuración, pestaña "Interfaz de usuario": la pestaña ahora se desplaza, y los grupos de opciones del final vuelven a leerse en su sitio. En pantallas más pequeñas el lector de pantalla anunciaba "Posición para anunciar elementos seleccionados" en la casilla siguiente, y no en los botones de opción del grupo
+WinZapp ya no sugiere por sí solo actualizaciones del servidor WPPConnect. Antes buscaba la versión más reciente del proyecto original y la ofrecía, pero sus correcciones se portan a mano a cada versión, así que una actualización podía acabar en una versión que aún no admite. Ahora WinZapp solo instala y ofrece la versión con la que se probó. Una instalación nueva y Ayuda > Forzar reinstalación de WPPConnect también usan esa versión.
 
-- Contenido con IA: restablecer todas las claves también borra los consentimientos de envío recordados, incluso al introducir una nueva clave antes de aplicar. Las transcripciones y los textos de PDF largos ahora indican un error de límite de texto en vez de perder el final sin avisar; no se prueba otro proveedor automáticamente por este límite.
+Las actualizaciones seguras del servidor WPPConnect ahora llegan sin esperar a una nueva versión de WinZapp. Cuando el equipo de WinZapp comprueba que una versión más reciente del servidor funciona con su WinZapp, normalmente una actualización que solo trae correcciones de seguridad en las bibliotecas que usa el servidor, WinZapp la ofrece como actualización recomendada y puede rechazarla. Ayuda > Forzar reinstalación de WPPConnect también usa la más reciente de esas versiones.
 
-- Botón "Describir" en los mensajes con contenido multimedia. En una foto, un sticker o un vídeo (y también en audios y PDF, cuando las funciones de IA están activadas), aparece un botón justo después de "Guardar como", accesible con Tab, que hace lo mismo que el atajo Ctrl+Shift+I; en el menú contextual, el elemento queda junto a las demás acciones multimedia y también muestra Ctrl+Shift+I. El botón y el elemento solo aparecen en los mensajes que se pueden describir.
+Actualizar WinZapp ya no devuelve el servidor WPPConnect a una versión anterior a la que ya instaló, por ejemplo una recomendada, así que no se le vuelve a ofrecer la misma actualización del servidor.
 
-- Modelo "Automático (recomendado)" en la ventana de cada proveedor de IA (Transcripciones y Descripciones). Marcada por defecto en los proveedores donde aún no habías elegido un modelo, la casilla hace que WinZapp use siempre el modelo que recomienda, que sigue las actualizaciones; desmárcala para elegir o escribir un modelo fijo.
+V2.0.1.0
+
+Esta es una versión de mantenimiento de la estable. Solo actualiza las bibliotecas WPPConnect que WinZapp usa para comunicarse con WhatsApp, después de un cambio en WhatsApp Web que rompió el envío de mensajes de voz y de documentos.
+
+CORRECCIONES
+
+El envío de mensajes de voz y de documentos vuelve a funcionar. WhatsApp Web cambió de una forma que hacía fallar estos envíos; ahora WinZapp usa las bibliotecas WPPConnect actualizadas (WPPConnect 2.3.5 y WA-JS 4.7.1), que lo gestionan.
+
+Se admite el servidor WPPConnect 2.10.55. Instalar o actualizar al servidor más reciente ya no termina con "npm run build failed", y el servidor se inicia con la configuración actual.
+
+Al vincular la cuenta, cancelar el emparejamiento ya no deja en marcha un ciclo de código QR antiguo, y una página de WhatsApp Web que nunca termina de cargar se abandona ahora a los 60 segundos, en lugar de dejar a WinZapp esperando.
+
+Si usabas una versión anterior y los mensajes de voz siguen fallando tras actualizar, WinZapp ofrece reinstalar WPPConnect al iniciar; acéptalo una vez y se instalan las nuevas bibliotecas.
 
 V2.0.0.0
 
@@ -120,6 +120,8 @@ MEJORAS
 
 CORRECCIONES
 
+- Las actualizaciones de WPPConnect descargadas en segundo plano ya no fallan al instalarse cuando queda en el disco una carpeta de servidor antigua de una actualización anterior. WinZapp ahora la elimina (o la aparta si Windows lo impide) y la actualización continúa.
+
 - Las llamadas ya no fallan con el error "NumPy was built with baseline optimizations", seguido de "cannot load module more than once per process", en equipos con un procesador más antiguo o limitado por una máquina virtual. WinZapp ahora incluye una versión de NumPy que funciona en cualquier procesador de 64 bits.
 
 - Llamadas: corregido el error "cannot load module more than once per process" que podía aparecer al iniciar una llamada de voz o de vídeo. El motor de llamadas de WhatsApp ahora se inicia una sola vez y se comparte, en lugar de iniciarse de nuevo con cada acción de llamada.
@@ -207,6 +209,8 @@ CORRECCIONES
 - Los avisos de actualización ahora también aparecen cuando WinZapp se inicia con Windows: en ese caso no se ofrecía ni la actualización del propio WinZapp ni la de WPPConnect Server. El aviso de WPPConnect Server también ofrece ahora una versión más reciente que la probada con WinZapp, como actualización recomendada que puedes rechazar, y no solo cuando el propio WinZapp subía la versión exigida.
 
 - En una conversación cuyos mensajes más antiguos solo están en el teléfono, WinZapp seguía pidiéndoselos al teléfono al llegar al primer mensaje: no llegaba nada, el teléfono podía mostrar cada vez un aviso de sincronización y la lista quedaba ocupada durante minutos. Ahora WinZapp detecta este caso, no pide nada y anuncia "Usa WhatsApp en tu teléfono para ver los mensajes más antiguos."
+
+- Configuración, pestaña "Interfaz de usuario": la pestaña ahora se desplaza, y los grupos de opciones del final vuelven a leerse en su sitio. En pantallas más pequeñas el lector de pantalla anunciaba "Posición para anunciar elementos seleccionados" en la casilla siguiente, y no en los botones de opción del grupo
 
 V1.1.1.0
 

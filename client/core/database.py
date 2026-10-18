@@ -31,7 +31,6 @@ from typing import Any
 import aiosqlite
 from cryptography.fernet import Fernet
 
-from core.phone_contacts import SYNCED_KEY, is_phone_synced
 from core.star_storage import preserve_stars, update_star_state
 from core.utils import MEASURED_SECONDS_KEY
 

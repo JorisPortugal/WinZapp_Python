@@ -1,30 +1,30 @@
-V2.1.0.0
+V2.0.2.0
 
-This release brings AI transcription and description of voice messages, images, videos, stickers and PDFs.
-
-WHAT'S NEW
-
-- Transcribe and describe media with AI. The new "Transcriptions and Descriptions" tab in Settings turns the AI features on (they start off) and takes the API key of one or more providers — Gemini, OpenAI, Claude, Groq and OpenRouter — which are tried in the order you set, so when one fails or runs out of quota the next one answers. In a message's context menu, or with Ctrl+Shift+I, "Transcribe" turns a voice message into text, "Describe" describes a photo or a video, "Describe sticker" describes a sticker and "Convert to accessible text" turns a PDF into plain, readable text. The result opens in a window with the text, and for photos and videos you can ask follow-up questions in it. WinZapp asks before sending media to a provider and asks again every time for locked chats; your keys are encrypted on your computer and are sent only to the provider they belong to. A waiting sound plays while the provider works, and answers can be read aloud automatically. The text follows the language of the app.
-
-- A separate sound plays when someone reacts to your message. Change its file or turn it off in Settings > Sound Events.
-
-- WhatsApp custom lists: refresh and filter by your lists, create or rename a list, and add or remove selected chats. List editing depends on WhatsApp account support. Locked and locally unavailable chats are excluded from selection; other memberships remain unchanged. Unverified changes are reported without automatic retries.
-
-- Contacts synced with the phone: when you add a contact (in "Chat info", in "New chat" or from a contact message) there are now two tabs, "WinZapp local contact" (only in WinZapp) and "Contact synced with the phone", which saves the name in WhatsApp and in the phone's address book. The synced tab opens by default, a number that is already in the phone's address book shows only that tab, and deleting a synced contact also removes it from WhatsApp and the phone
-
-- New shortcut Alt+Shift+P in the messages list: jump to the previous message that replies to you, like Alt+Shift+M does for mentions. Repeated presses go back through them and wrap to the newest. It is also listed in "Keyboard shortcuts" (F1)
+This is another maintenance release for the stable version. It only changes how WinZapp works with the WPPConnect server, the program that connects WinZapp to WhatsApp: it supports the latest server version and now installs only versions it knows work.
 
 FIXES
 
-- Mentions: a person mentioned by name next to @all keeps their link in the message's mentions, and a mention of you, in the notification and in the chat list preview, uses the word chosen in "How should I be referred to?" instead of a fixed word
+WPPConnect server 2.10.58 is supported. The server now refuses to start a session while sessions are being backed up or restored, saves each session's token file in one piece so a crash cannot leave it half-written, and reuses a checked access token for a minute instead of checking it again on every request. If WinZapp offers the WPPConnect update at startup, accept it to install the new version.
 
-- Settings, "User Interface" tab: the tab now scrolls, and the option groups near its end are read in the right place again. On smaller screens the screen reader announced "Position to announce selected items" on the checkbox after it, and not on the group's own radio buttons
+WinZapp no longer suggests WPPConnect server updates on its own. It used to look for the newest version of the original project and offer it, but its fixes are ported to each version by hand, so an update could land on a version it does not support yet. Now WinZapp only installs and offers the version it was tested with. A new installation and Help > Force reinstall WPPConnect use that version too.
 
-- AI media: resetting all keys also clears remembered sending consent, even when a new key is entered before applying. Long transcripts and PDF text now report a text-limit error instead of silently losing their endings; another provider is not tried automatically for this limit.
+Safe WPPConnect server updates now arrive without waiting for a new WinZapp version. When the WinZapp team checks that a newer server version works with your WinZapp, usually an update that only brings security fixes to the libraries the server uses, WinZapp offers it as a recommended update, and you can decline it. Help > Force reinstall WPPConnect also uses the newest of these versions.
 
-- "Describe" button on media messages. On a photo, sticker or video (and on audio and PDFs too, when the AI features are on), a button appears right after "Save as", reachable with Tab, that does the same as the Ctrl+Shift+I shortcut; in the context menu the item now sits with the other media actions, also showing Ctrl+Shift+I. The button and the item only appear on messages that can be described.
+Updating WinZapp no longer puts the WPPConnect server back to a version older than the one you already installed, for example a recommended one, so the same server update is not offered to you again.
 
-- "Automatic (recommended)" model in each AI provider window (Transcriptions and Descriptions). Checked by default for providers where you had not picked a model, the box makes WinZapp always use the model it recommends, which follows updates; uncheck it to pick or type a fixed model.
+V2.0.1.0
+
+This is a maintenance release for the stable version. It only updates the WPPConnect libraries WinZapp uses to talk to WhatsApp, after a WhatsApp Web change broke sending voice messages and documents.
+
+FIXES
+
+Sending voice messages and documents works again. WhatsApp Web changed in a way that made these sends fail; WinZapp now uses the updated WPPConnect libraries (WPPConnect 2.3.5 and WA-JS 4.7.1) that handle it.
+
+WPPConnect server 2.10.55 is supported. Installing or updating to the latest server no longer ends with "npm run build failed", and the server is now started with the current settings.
+
+Linking your account no longer leaves a stale QR code loop running when pairing is cancelled, and a WhatsApp Web page that never finishes loading is now given up on after 60 seconds instead of leaving WinZapp waiting.
+
+If you used a previous version and voice messages still fail after updating, WinZapp offers to reinstall WPPConnect on startup; accept it once and the new libraries are installed.
 
 V2.0.0.0
 
@@ -120,6 +120,8 @@ IMPROVEMENTS
 
 FIXES
 
+- WPPConnect updates downloaded in the background no longer fail to install when an old server folder from an earlier update is left on disk. WinZapp now removes it (or sets it aside if Windows refuses) and the update goes through.
+
 - Calls no longer fail with a "NumPy was built with baseline optimizations" error, followed by "cannot load module more than once per process", on computers whose processor is older or limited by a virtual machine. WinZapp now ships a NumPy build that runs on any 64-bit processor.
 
 - Calls: fixed the "cannot load module more than once per process" error that could appear when starting a voice or video call. WhatsApp's call engine is now started only once and shared, instead of being started again by each call action.
@@ -207,6 +209,8 @@ FIXES
 - Update notices now also appear when WinZapp starts with Windows: neither WinZapp's own update nor the WPPConnect Server one was ever offered in that case. The WPPConnect Server notice also now offers a newer release than the one WinZapp was tested with, as a recommended update you can decline, instead of only when WinZapp itself raised the required version.
 
 - In a chat whose older messages are only on your phone, WinZapp kept asking the phone for them when you reached the first message: nothing arrived, the phone could show a sync notification each time, and the list stayed busy for minutes. WinZapp now detects this case, asks nothing and announces "Use WhatsApp on your phone to see older messages."
+
+- Settings, "User Interface" tab: the tab now scrolls, and the option groups near its end are read in the right place again. On smaller screens the screen reader announced "Position to announce selected items" on the checkbox after it, and not on the group's own radio buttons
 
 V1.1.1.0
 
