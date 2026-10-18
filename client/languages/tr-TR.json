@@ -512,7 +512,7 @@
   "wpp_update_failed_msg": "WPPConnect güncellenemedi. Mümkünse önceki kurulum korunacaktır.",
   "wpp_update_fetch_failed_msg": "En son WPPConnect sürümü denetlenemedi. İnternet bağlantınızı kontrol edip tekrar deneyin.",
   "wpp_force_reinstall_confirm_title": "WPPConnect'i yeniden yüklemeye zorla",
-  "wpp_force_reinstall_confirm_msg": "Bu işlem WPPConnect'i (çalışıyorsa) durduracak, mevcut kurulumu silecek ve zaten kurulu olup olmadığını denetlemeden en son sürümü (v{version}) indirip yükleyecektir. Devam edilsin mi?",
+  "wpp_force_reinstall_confirm_msg": "Bu işlem WPPConnect'i (çalışıyorsa) durduracak, mevcut kurulumu silecek ve zaten kurulu olup olmadığını denetlemeden bu WinZapp'ın desteklediği sürümü (v{version}) indirip yükleyecektir. Devam edilsin mi?",
   "wpp_reinstall_notice_title": "WPPConnect güncellemesi öneriliyor",
   "wpp_reinstall_notice_message": "Mevcut WPPConnect kurulumunuz, sesli ve görüntülü aramalar gibi en son özelliklerin bazılarına sahip olmayabilir. WPPConnect'i şimdi yeniden yüklemek ister misiniz? Fikrinizi değiştirirseniz, bu seçeneğe her zaman yardım menüsünden (alt+y) ulaşabilirsiniz.",
   "update_no_zip_asset": "En son sürümde ZIP dosyası bulunamadı.",
