@@ -53,3 +53,5 @@ Dependencies: only `@aws-sdk/client-s3` and dev tooling moved; the homologated p
 Flows through untouched: `manageSession.ts` (now serialises backup/restore through the new `sessionMaintenance.ts` and calls our `cleanupSession(session, cb)` — same signature), `FileTokenStore.ts` (atomic token writes; `fileTokenStory.ts`, ours, only wraps it), `redisTokenStory.ts`, `redis/db.ts`, `miscController.ts`.
 
 Verified on a scratch checkout of 2.10.58 with the patches laid over it: `tsc --noEmit` reports only missing-module errors from using our `package.json` as the install source (`socket.io-client`, `express-rate-limit`), none in a patched file. Jest: upstream's new `auth`, `sessionSecretKeyGuards`, `manageSession` and `sessionMaintenance` suites pass; `sessionLifecycle` fails the same two cases as on 2.10.52 (INITIALIZING placeholder close, close that rejects), the documented divergence from our `closeSession`.
+
+`update_keeps_server.py` still says the gap is nothing with the bundled tag: it is, again, because the overridden files above were ported.
