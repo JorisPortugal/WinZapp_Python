@@ -483,7 +483,7 @@ def test_group_offer_uses_whatsapps_own_group_start_entry_points():
     assert "chat.groupMetadata" in group
     assert "WAWebWamEnumCallFromUi" in group
     assert "WAWebWamEnumLobbyEntryPointType" in group
-    assert "await start(chat, isVideo, callFromUi, lobbyEntryPoint)" in group
+    assert "await start(startChat, isVideo, callFromUi, lobbyEntryPoint)" in group
     assert "WPP.call.offer" not in group
 
     assert "if (action === 'group-offer')" in controller
@@ -493,6 +493,95 @@ def test_group_offer_uses_whatsapps_own_group_start_entry_points():
     assert "Parameter groupJid is required!" in controller
 
 
+def test_outgoing_group_call_caps_invites_at_the_ab_prop():
+    """The VoIP engine rejects a startGroupCall with more participants than
+    group_call_max_participants: the WASM returns -1 before signaling, so no
+    CallModel is created and the offer times out. The AB prop counts the whole
+    call, self included (WhatsApp's own picker invites max - 1 others), so the
+    patch caps the invite list at cap - 1 and keeps the PN/LID/device arrays
+    aligned by slicing the single list the native function derives all three
+    from. The real chat must stay untouched.
+    """
+    controller = _source("client/api_patches/src/controller/callController.ts")
+    group = controller[controller.index("const capGroupCallParticipants"):]
+    group = group[: group.index("const waitForOfferedCall")]
+
+    assert "requireWa('WAWebABProps')?.getABPropConfigValue?.(" in group
+    assert "'group_call_max_participants'" in group
+    assert "Number.isFinite(configuredLimit) && configuredLimit > 0" in group
+    assert "Math.floor(configuredLimit)" in group
+    assert ": 32;" in group  # fallback total limit when the prop is unavailable
+    assert "Math.max(1, participantLimit - 1)" in group
+    assert "capGroupCallParticipants(" in group
+    assert "inviteLimit," in group
+    assert "chat.groupMetadata.participants?.toArray?.()" in group
+    assert "requireWa('WAWebUserPrefsMeUser')?.isMeAccount" in group
+    assert "requireWa('WAWebShouldShowCallButtons')?.canBeCallParticipant" in group
+    assert "callable.length > limit" in group
+    assert "callable.slice(0, limit)" in group
+    assert "const cappedMetadata = Object.create(" in group
+    assert "Object.assign(cappedMetadata, chat.groupMetadata)" in group
+    assert "toArray: () => selection.participants" in group
+    assert "startChat = Object.create(Object.getPrototypeOf(chat))" in group
+    assert "startChat.groupMetadata = cappedMetadata" in group
+    assert "slice(0, 32)" not in group
+    assert "participantLimit = 32" not in group
+    # Large groups (more members than the call limit) cannot be rung on the
+    # server (can_ring_all is false); they only support joinable "voice
+    # conversations", which must be started from the primary phone. Refuse
+    # early with a clear message instead of a silent ParticipantAllocationFailure.
+    assert "isLargeGroup" in group
+    assert "more than" in group
+    assert "primary phone" in group
+
+
+def test_group_offer_clears_stale_pending_call_before_retrying():
+    """A worker startGroupCall failure is fire-and-forget: the non-zero status
+    never reaches WhatsApp's own catch, so pendingOutgoingCall survives and
+    the next attempt is refused before it starts. Clear it through WhatsApp's
+    cancel function (setPendingOutgoingCall(null) does not abort the
+    controller) after every failed group attempt and before the final throw.
+    One-to-one offers keep their old behaviour."""
+    controller = _source("client/api_patches/src/controller/callController.ts")
+    waiter = controller[controller.index("const waitForOfferedCall"):]
+    waiter = waiter[: waiter.index("if (action === 'offer')")]
+
+    assert "clearStalePending = false" in waiter
+    assert "if (clearStalePending) clearPendingOutgoingCall();" in waiter
+    assert "if (clearStalePending) clearPendingOutgoingCall();\n          throw error;" in waiter
+    assert (
+        "if (clearStalePending) clearPendingOutgoingCall();\n"
+        "          throw new Error(`WhatsApp did not create ${kind} call model`);"
+    ) in waiter
+
+    helper = controller[controller.index("const clearPendingOutgoingCall"):]
+    helper = helper[: helper.index("const sameCallId")]
+    assert "requireWa('WAWebVoipCancelOutgoingCall')?.cancelPendingOutgoingCall?.()" in helper
+    assert "requireWa('WAWebVoipCallIdProvider')?.resetPendingCallId?.()" in helper
+    assert "setPendingOutgoingCall(null)" not in helper
+
+    group_offer = controller[controller.index("if (action === 'group-offer')"):]
+    group_offer = group_offer[: group_offer.index("throw new Error(`Unsupported call action")]
+    assert "'an outgoing group',\n          true" in group_offer
+
+
+def test_group_offer_reports_participant_counts_without_jids():
+    controller = _source("client/api_patches/src/controller/callController.ts")
+    group_offer = controller[controller.index("if (action === 'group-offer')"):]
+    group_offer = group_offer[: group_offer.index("throw new Error(`Unsupported call action")]
+
+    assert "groupCallParticipantLimit: lastGroupCallSelection.limit" in group_offer
+    assert "groupCallInvited: lastGroupCallSelection.invited" in group_offer
+    assert "groupCallTotal: lastGroupCallSelection.total" in group_offer
+
+    calls = _source("client/main_window/calls.py")
+    log = calls[calls.index("if is_group and isinstance(body, dict):"):]
+    log = log[: log.index('call_id = str(body.get("id")')]
+    assert "groupCallInvited" in log
+    assert "groupCallTotal" in log
+    assert "groupCallParticipantLimit" in log
+    assert "groupJid" not in log
+    assert "peer_jid" not in log
 
 
 def test_active_call_poll_tolerates_transient_active_call_gaps():

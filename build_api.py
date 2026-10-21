@@ -57,6 +57,8 @@ def _verify_critical_call_patch(api_dir: str) -> None:
         "forgetIncomingCall",
         "__winzappForgetIncomingCall",
         "runNativeVoipAction",
+        "group_call_max_participants",
+        "cancelPendingOutgoingCall",
     )
     absent_from_source = [marker for marker in markers if marker not in source]
     if absent_from_source:

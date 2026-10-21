@@ -63,6 +63,27 @@ async function evaluateWppCall(req: Request, action: string, payload: CallAction
         } catch (_) {}
         return win.WPP?.whatsapp?.CallStore || win.Store?.Call || null;
       };
+      const requireWa = (name: string): any => {
+        try {
+          return win.require?.(name);
+        } catch (_) {
+          return null;
+        }
+      };
+      // A group start that the VoIP worker rejects leaves the native
+      // pendingOutgoingCall behind: the worker proxy sends startGroupCall with
+      // rpc.fire, so the non-zero status never reaches the page and WhatsApp's
+      // own catch never runs. Every later attempt is then ignored as "a call is
+      // being placed". cancelPendingOutgoingCall() also aborts the pending
+      // controller; setPendingOutgoingCall(null) alone does not.
+      const clearPendingOutgoingCall = () => {
+        try {
+          requireWa('WAWebVoipCancelOutgoingCall')?.cancelPendingOutgoingCall?.();
+        } catch (_) {}
+        try {
+          requireWa('WAWebVoipCallIdProvider')?.resetPendingCallId?.();
+        } catch (_) {}
+      };
       const sameCallId = (call: any, wanted: string): boolean => {
         if (!call || !wanted) return false;
         return callIdOf(call) === wanted || serializeId(call?.id?._serialized) === wanted;
@@ -486,17 +507,55 @@ async function evaluateWppCall(req: Request, action: string, payload: CallAction
       // invites the group. The resulting call then lives in CallStore exactly
       // like a one-to-one one, which is why the polling below is shared.
       // Never hand-roll group signaling here.
+      let lastGroupCallSelection: {
+        limit: number;
+        invited: number;
+        total: number;
+      } = { limit: 0, invited: 0, total: 0 };
+
+      // WhatsApp's engine accepts at most group_call_max_participants in one
+      // startGroupCall call. That AB prop counts the whole call, self included,
+      // exactly like WhatsApp's own group-call picker (max - 1 invitees). The
+      // native function adds self to the room, so inviting the full cap would
+      // build a (cap + 1)-participant room: WhatsApp removed it as Failed
+      // after ~4 s on 2026-10-21 (engine participant_count 33, limit 32).
+      // Cap the invite list at cap - 1; the PN, LID and device arrays are all
+      // derived from this one list, so slicing it keeps them aligned.
+      const capGroupCallParticipants = (
+        participants: any[],
+        limit: number,
+        isMe?: (id: any) => boolean,
+        canCall?: (id: any) => boolean
+      ): { participants: any[]; total: number; capped: boolean } => {
+        const callable = participants.filter((participant) => {
+          const id = participant?.id;
+          if (!id) return false;
+          if (typeof isMe === 'function') {
+            try {
+              if (isMe(id)) return false;
+            } catch (_) {}
+          }
+          if (typeof canCall === 'function') {
+            try {
+              if (!canCall(id)) return false;
+            } catch (_) {
+              return false;
+            }
+          }
+          return true;
+        });
+        const capped = callable.length > limit;
+        return {
+          participants: capped ? callable.slice(0, limit) : callable,
+          total: callable.length,
+          capped,
+        };
+      };
+
       const startOutgoingGroupCall = async (
         groupJid: string,
         isVideo: boolean
       ): Promise<any> => {
-        const requireWa = (name: string): any => {
-          try {
-            return win.require?.(name);
-          } catch (_) {
-            return null;
-          }
-        };
         const start =
           win.WPP?.whatsapp?.functions?.startWAWebVoipGroupCallFromChat ||
           requireWa('WAWebVoipStartCall')?.startWAWebVoipGroupCallFromChat;
@@ -517,7 +576,56 @@ async function evaluateWppCall(req: Request, action: string, payload: CallAction
         const lobbyEntryPoint =
           requireWa('WAWebWamEnumLobbyEntryPointType')?.LOBBY_ENTRY_POINT_TYPE
             ?.GROUP_CHAT_INFO ?? 11;
-        await start(chat, isVideo, callFromUi, lobbyEntryPoint);
+        const configuredLimit = Number(
+          requireWa('WAWebABProps')?.getABPropConfigValue?.(
+            'group_call_max_participants'
+          )
+        );
+        const participantLimit =
+          Number.isFinite(configuredLimit) && configuredLimit > 0
+            ? Math.floor(configuredLimit)
+            : 32;
+        // The AB prop includes self, so the invite list gets one fewer slot.
+        const inviteLimit = Math.max(1, participantLimit - 1);
+        const selection = capGroupCallParticipants(
+          chat.groupMetadata.participants?.toArray?.() || [],
+          inviteLimit,
+          requireWa('WAWebUserPrefsMeUser')?.isMeAccount,
+          requireWa('WAWebShouldShowCallButtons')?.canBeCallParticipant
+        );
+        lastGroupCallSelection = {
+          limit: participantLimit,
+          invited: selection.participants.length,
+          total: selection.total,
+        };
+        let startChat = chat;
+        if (selection.capped) {
+          // A shallow clone keeps the real chat and its metadata untouched
+          // while the native function reads the capped participant list.
+          const cappedMetadata = Object.create(
+            Object.getPrototypeOf(chat.groupMetadata)
+          );
+          Object.assign(cappedMetadata, chat.groupMetadata);
+          cappedMetadata.participants = {
+            toArray: () => selection.participants,
+          };
+          startChat = Object.create(Object.getPrototypeOf(chat));
+          Object.assign(startChat, chat);
+          startChat.groupMetadata = cappedMetadata;
+        }
+        const isLargeGroup =
+          (chat.groupMetadata.participants?.toArray?.().length || 0) >
+          participantLimit;
+        if (isLargeGroup) {
+          throw new Error(
+            'This group has more than ' +
+              participantLimit +
+              ' members. Outgoing calls for large groups are only available ' +
+              'as joinable voice conversations, which must be started from the ' +
+              'primary phone; incoming group calls to this group still ring here.'
+          );
+        }
+        await start(startChat, isVideo, callFromUi, lobbyEntryPoint);
         return null;
       };
 
@@ -527,7 +635,8 @@ async function evaluateWppCall(req: Request, action: string, payload: CallAction
       // and only trust a direct return value when it is not stale.
       const waitForOfferedCall = async (
         place: () => Promise<any>,
-        kind: string
+        kind: string,
+        clearStalePending = false
       ): Promise<any> => {
         let call: any = null;
         const storeBeforeOffer = getCallStore();
@@ -536,42 +645,57 @@ async function evaluateWppCall(req: Request, action: string, payload: CallAction
         );
         const previousActiveId = callIdOf(storeBeforeOffer?.activeCall);
 
-        for (let attempt = 0; attempt < 3 && !call; attempt += 1) {
-          await ensureVoipRuntimeReady();
-          const offered = await place();
+        try {
+          for (let attempt = 0; attempt < 3 && !call; attempt += 1) {
+            await ensureVoipRuntimeReady();
+            const offered = await place();
 
-          for (let waitAttempt = 0; waitAttempt < 50 && !call; waitAttempt += 1) {
-            const store = getCallStore();
-            const active = store?.activeCall;
-            const activeId = callIdOf(active);
-            if (
-              active &&
-              isOutgoingOrLiveCall(active) &&
-              (!previousActiveId || activeId !== previousActiveId)
-            ) {
-              call = active;
-              break;
-            }
+            for (let waitAttempt = 0; waitAttempt < 50 && !call; waitAttempt += 1) {
+              const store = getCallStore();
+              const active = store?.activeCall;
+              const activeId = callIdOf(active);
+              if (
+                active &&
+                isOutgoingOrLiveCall(active) &&
+                (!previousActiveId || activeId !== previousActiveId)
+              ) {
+                call = active;
+                break;
+              }
 
-            const offeredId = callIdOf(offered);
-            if (offered && offeredId && !preexistingIds.has(offeredId)) {
-              call = offered;
-              break;
-            }
+              const offeredId = callIdOf(offered);
+              if (offered && offeredId && !preexistingIds.has(offeredId)) {
+                call = offered;
+                break;
+              }
 
-            const freshModel = getModels(store).find((model) => {
-              const modelId = callIdOf(model);
-              return !!modelId && !preexistingIds.has(modelId) && isOutgoingOrLiveCall(model);
-            });
-            if (freshModel) {
-              call = freshModel;
-              break;
+              const freshModel = getModels(store).find((model) => {
+                const modelId = callIdOf(model);
+                return !!modelId && !preexistingIds.has(modelId) && isOutgoingOrLiveCall(model);
+              });
+              if (freshModel) {
+                call = freshModel;
+                break;
+              }
+              await delay(100);
             }
-            await delay(100);
+            if (!call) {
+              // A rejected group start leaves pendingOutgoingCall behind, and
+              // without this the next attempt is refused before it reaches
+              // the worker: the page proxy fires startGroupCall, so the
+              // non-zero status never reaches WhatsApp's own failure path.
+              if (clearStalePending) clearPendingOutgoingCall();
+              if (attempt < 2) await delay(300 * (attempt + 1));
+            }
           }
-          if (!call && attempt < 2) await delay(300 * (attempt + 1));
+        } catch (error) {
+          if (clearStalePending) clearPendingOutgoingCall();
+          throw error;
         }
-        if (!call) throw new Error(`WhatsApp did not create ${kind} call model`);
+        if (!call) {
+          if (clearStalePending) clearPendingOutgoingCall();
+          throw new Error(`WhatsApp did not create ${kind} call model`);
+        }
         return call;
       };
 
@@ -586,9 +710,18 @@ async function evaluateWppCall(req: Request, action: string, payload: CallAction
       if (action === 'group-offer') {
         const call = await waitForOfferedCall(
           () => startOutgoingGroupCall(String(payload.groupJid), !!payload.isVideo),
-          'an outgoing group'
+          'an outgoing group',
+          true
         );
-        return summarizeCall(call);
+        return {
+          ...summarizeCall(call),
+          // Counts only: the group JID and the participants never leave the
+          // page. WinZapp logs these so a capped invite is visible after the
+          // fact instead of looking like a silently smaller call.
+          groupCallParticipantLimit: lastGroupCallSelection.limit,
+          groupCallInvited: lastGroupCallSelection.invited,
+          groupCallTotal: lastGroupCallSelection.total,
+        };
       }
 
       throw new Error(`Unsupported call action: ${action}`);

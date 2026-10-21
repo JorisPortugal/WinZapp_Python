@@ -1436,6 +1436,19 @@ class CallsMixin:
                     body = response.json().get("response") or {}
                 except Exception:
                     body = {}
+                # Counts only, never the JID or the participant IDs: this makes
+                # a capped group invite visible in log.log instead of looking
+                # like a group call that silently reached fewer people.
+                if is_group and isinstance(body, dict):
+                    invited = body.get("groupCallInvited")
+                    if invited is not None:
+                        logging.info(
+                            "[call] group call invited %s of %s participant(s) "
+                            "(total limit %s, self included)",
+                            invited,
+                            body.get("groupCallTotal"),
+                            body.get("groupCallParticipantLimit"),
+                        )
                 call_id = str(body.get("id") or "") if isinstance(body, dict) else ""
                 with self._call_action_lock:
                     # Everything this decision needs is re-read HERE, under the

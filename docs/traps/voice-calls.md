@@ -696,3 +696,34 @@ A tester with speakers reported the other person hearing their own voice, only i
 - **Defaults:** echo cancellation is on (`migrate_echo_cancellation_default()` turned it on once for existing installs, `settings-migrations.md`); noise suppression stays off. With a headset AEC3 finds no echo and leaves the voice alone.
 
 **Answering from any window: two Windows hotkeys held only while they can act.** `main_window/call_hotkeys.py` registers them with `_HotkeyManager`: *answer* (shipped Ctrl+Alt+Shift+Enter) while a one-to-one offer rings, *end* (shipped Ctrl+Alt+Shift+Backspace) while any offer rings or a call is in progress. *Answer* accepts the call, then brings the call window in front of any program (`core/dialog_foreground.force_foreground(topmost=True)`, the helper the incoming-call popup uses too) and focuses its first button; a video call is answered like its Answer button, camera on. A group offer never takes *answer* (`first_answerable_call()` skips it, as the Answer button does). *End* rejects the first ringing offer, a group one included, before it would hang up the call in progress: a group call ringing during a one-to-one call must not cost the user the call they are on. Both are settings (`general.call_answer_hotkey` / `call_end_hotkey`, `{"vk": 0, "mod": 0}` = removed) edited as `global` rows of Settings > Keyboard shortcuts next to the show-WinZapp key; an import that puts one on the show-WinZapp key or on the other call key keeps the old value. A show-WinZapp key saved on a call key's combination (possible before the call keys shipped) keeps it: `call_hotkey_setting()` then reads that call key as removed, and `saved_call_hotkey()` is the raw value. The call keys retry a failed registration every second, not every 15 s, since another account lets go of the key as soon as its call is decided. `_sync_incoming_call_bar()` and `_sync_voice_call_bar()` (which `_stop_voice_call_audio()` queues at the end of a call) ask for a sync with `_request_call_hotkey_sync()`, which queues one `_sync_call_hotkeys()` behind a pending flag. Never sync in place: `accept_incoming_call()` stops the alert before it sets `_active_voice_call`, and a sync in between dropped the end key and took it again on every answer, each `stop(wait=True)` holding the UI thread. `_perform_shutdown()` calls `_release_call_hotkeys()` first, and both keys do nothing once `_shutting_down` is set: answering into a server being stopped opens call audio for nothing. Why they are not permanent: a system-wide Ctrl+Alt+Shift+Enter held all day would take that key from every other program. Several accounts open: each account is its own process and Windows gives a combination to one registration, so while account A holds *end* for its call, account B's ringing call cannot take it and the press meant for B reaches A. With nothing ringing locally, A therefore asks every other running account first (`ipc.request_reject_ringing_call`, off the wx thread) and hangs up only when none had a call ringing, and only if the same call is still in progress by then.
+
+## Group call participant cap counts self (measured 2026-10-21)
+
+An outgoing group call from a 67-member group failed natively ~3.8 s after the
+CallModel appeared. Over CDP: the engine reported `participant_count: 33`,
+WhatsApp called `setActiveCall(null)` (no `native:setCallFailedReason`), and the
+retained model came back `callLogResult: 7` (Failed), `wasEverConnected: false`,
+`userEndedCall: false`, with no `callFailedReason`.
+
+`group_call_max_participants` is 32 and **counts the whole call, self
+included**. WhatsApp's own group-call picker computes
+`M = useABPropConfigValue("group_call_max_participants") - 1` and rejects
+`selected.length > M`, so it invites at most 31 others. The native
+`startWAWebVoipGroupCallFromChat` filters self and non-callable participants,
+then passes the rest to the engine, which adds self to the room — so passing 32
+others built a 33-participant room and the server rejected it. The controller
+now caps the invite list at `Math.max(1, participantLimit - 1)` (31 with the
+current prop); the PN, LID and device arrays are all derived from that one list,
+so slicing it keeps them aligned. `/call/group-offer` still reports
+`groupCallParticipantLimit` (the total limit), `groupCallInvited` and
+`groupCallTotal` as counts only. The capped list is handed over through a
+shallow clone of the chat and its `groupMetadata`; never mutate the real model.
+
+**Large groups (> participantLimit members) cannot be rung.** `can_ring_all` is false
+for them on the server, and WhatsApp only offers a joinable "voice conversation"
+there (the iPhone shows "iniciar uma conversa de voz com este grupo"). The
+server rejects any ringing attempt with `ParticipantAllocationFailure`
+(`call_setup_error_type: 1`, `is_group_call_created_on_server: false`), even with
+`isJoin:true` forced on `startGroupCall`. Those calls must be started from the
+primary phone; WinZapp throws a clear error for them instead of failing silently.
+Small groups (<= participantLimit) keep the ringing path, which works.
